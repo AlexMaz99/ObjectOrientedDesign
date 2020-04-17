@@ -2,7 +2,7 @@
 ## Aleksandra Mazur, Grzegorz Poręba
 
 
-### 4.1. Builder
+## 4.1. Builder
 ### 1. Interfejs MazeBuilder
 Stworzono interfejs MazeBuilder, służący do tworzenia labiryntów.
 
@@ -242,7 +242,7 @@ public class MazeGame {
 
 Jak widać powyżej, suma wszystkich pokoi, drzwi i ścian została obliczona poprawnie (2 pokoje + 6 ścian + 1 drzwi).
 
-### 4.2 Fabryka abstrakcyjna
+## 4.2 Fabryka abstrakcyjna
 Po zapoznaniu się z treścią kolejnych poleceń, stworzono klasę Vector2d, obrazującą współrzędne obiektu na mapie.
 
 | Metoda | Typ | Znaczenie |
@@ -555,5 +555,65 @@ public class BombedMazeFactory extends MazeFactory{
     public Wall createWall() {
         return new BombedWall();
     }
+}
+```
+
+## 4.3 Singleton
+Aby MazeFactory było Singletonem do klas MazeFactory, EnchantedMazeFactory i BombedMazeFactor, dodano ich statyczne instancje i metody getInstance.
+
+Klasa MazeFactory:
+```java
+package pl.agh.edu.dp.labirynth.Factory;
+
+public class MazeFactory {
+
+    private static MazeFactory instance;
+
+    public static MazeFactory getInstance(){
+        if( instance == null){
+            instance = new MazeFactory();
+        }
+        return instance;
+    }
+
+    ...
+}
+```
+
+Klasa EnchantedMazeFactory:
+```java
+package pl.agh.edu.dp.labirynth.Factory;
+
+public class EnchantedMazeFactory extends MazeFactory {
+
+    private static EnchantedMazeFactory instance;
+
+    public static EnchantedMazeFactory getInstance(){
+        if( instance == null){
+            instance = new EnchantedMazeFactory();
+        }
+        return instance;
+    }
+
+    ...
+}
+```
+
+Klasa BombedMazeFactory:
+```java
+package pl.agh.edu.dp.labirynth.Factory;
+
+public class BombedMazeFactory extends MazeFactory{
+
+    private static BombedMazeFactory instance;
+
+    public static BombedMazeFactory getInstance(){
+        if( instance == null){
+            instance = new BombedMazeFactory();
+        }
+        return instance;
+    }
+
+    ...
 }
 ```
