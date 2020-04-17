@@ -155,6 +155,7 @@ public class Main {
 ```
 
 ![](res/2020-04-17-20-39-51.png)
+
 Jak widać powyżej liczba utworzonych pokoi została zwrócona poprawnie.
 
 ### 6. Klasa CountingMazeBuilder
@@ -240,3 +241,319 @@ public class MazeGame {
 ![](res/2020-04-17-21-02-34.png)
 
 Jak widać powyżej, suma wszystkich pokoi, drzwi i ścian została obliczona poprawnie (2 pokoje + 6 ścian + 1 drzwi).
+
+### 4.2 Fabryka abstrakcyjna
+Po zapoznaniu się z treścią kolejnych poleceń, stworzono klasę Vector2d, obrazującą współrzędne obiektu na mapie.
+
+| Metoda | Typ | Znaczenie |
+|---------|-----|-----------|
+|nextPos| Vector2d | zwraca pozycję, na którą powinien przemieścić się obiekt po udaniu się w danym kierunku |
+|lowerRight | Vector2d | zwraca nowy wektor o maksymalnych współrzędnych |
+
+```java
+package pl.agh.edu.dp.labirynth.Utils;
+
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
+
+@AllArgsConstructor
+@EqualsAndHashCode
+@ToString
+public class Vector2d {
+    final public int x;
+    final public int y;
+
+    public Vector2d nextPos(Direction dir) {
+        switch (dir) {
+            case South:
+                return new Vector2d(this.x, this.y - 1);
+            case East:
+                return new Vector2d(this.x + 1, this.y);
+            case West:
+                return new Vector2d(this.x - 1, this.y);
+            case North:
+                return new Vector2d(this.x, this.y + 1);
+        }
+        throw new NullPointerException("Pos doesnt exist");
+    }
+
+
+    public Vector2d lowerRight(Vector2d other) {
+        return new Vector2d(Math.max(this.x, other.x), Math.max(this.y, other.y));
+    }
+}
+```
+
+Następnie do klasy Room dodano zmienną Vector2d odwzorowującą pozycję w labiryncie.
+
+```java
+package pl.agh.edu.dp.labirynth.MazeElements.Rooms;
+
+import lombok.Getter;
+import pl.agh.edu.dp.labirynth.MazeElements.MapSite;
+import pl.agh.edu.dp.labirynth.Utils.Direction;
+import pl.agh.edu.dp.labirynth.Utils.Vector2d;
+
+import java.util.EnumMap;
+import java.util.Map;
+
+public class Room extends MapSite {
+    @Getter
+    private Vector2d position;
+    @Getter
+    private Map<Direction, MapSite> sides;
+
+
+    public Room(Vector2d position) {
+        this.sides = new EnumMap<>(Direction.class);
+        this.position = position;
+    }
+
+    public MapSite getSide(Direction direction) {
+        return this.sides.get(direction);
+    }
+
+    public void setSide(Direction direction, MapSite ms) {
+        this.sides.put(direction, ms);
+    }
+
+    @Override
+    public void Enter() {
+        System.out.println("You entered normal room");
+    }
+}
+```
+
+### 1. Klasa MazeFactory
+Stworzono klasę MazeFactory, służącą do tworzenia elementów labiryntu, o następujących metodach:
+
+| Metoda | Typ | Znaczenie |
+|---------|-----|-----------|
+|createRoom| Room | tworzy pokój na określonej pozycji|
+|createDoor   | Door| tworzy drzwi między dwoma pokojami|
+| createWall | Wall | tworzy ścianę |
+
+```java
+package pl.agh.edu.dp.labirynth.Factory;
+
+import pl.agh.edu.dp.labirynth.MazeElements.Doors.Door;
+import pl.agh.edu.dp.labirynth.MazeElements.Rooms.Room;
+import pl.agh.edu.dp.labirynth.MazeElements.Walls.Wall;
+import pl.agh.edu.dp.labirynth.Utils.Vector2d;
+
+public class MazeFactory {
+
+    public Door createDoor(Room r1, Room r2) {
+        return new Door(r1, r2);
+    }
+
+    public Room createRoom(Vector2d pos) {
+        return new Room(pos);
+    }
+
+    public Wall createWall() {
+        return new Wall();
+    }
+}
+```
+
+### 2. Funkcja createMaze
+Przeprowadzono kolejną modyfikację funkcji createMaze tak, aby jako parametr przyjmowała obiekt MazeFactory.
+
+```java
+package pl.agh.edu.dp.labirynth;
+
+import static pl.agh.edu.dp.labirynth.Direction.*;
+
+public class MazeGame {
+    public Maze createMaze(CountingMazeBuilder builder, MazeFactory factory) throws Exception {
+
+        Room r1 = factory.createRoom(1);
+        Room r2 = factory.createRoom(2);
+
+        builder.addRoom(r1);
+        builder.addRoom(r2);
+
+        builder.createCommonWall(South, r1, r2);
+        builder.createDoor(r1, r2);
+
+        return builder.getCurrentMaze();
+    }
+}
+```
+
+### 3. Klasa EnchantedMazeFactory
+Stworzono klasy reprezentujące magiczne pokoje, drzwi i ściany, dziedziczące odpowiednio po klasach Room, Door, Wall.
+
+Klasa EnchantedRoom:
+```java
+package pl.agh.edu.dp.labirynth.MazeElements.Rooms;
+
+import pl.agh.edu.dp.labirynth.Utils.Vector2d;
+
+public class EnchantedRoom extends Room {
+
+    public EnchantedRoom(Vector2d position) {
+        super(position);
+    }
+
+    @Override
+    public void Enter() {
+        System.out.println("You entered enchanted room");
+    }
+
+}
+```
+
+Klasa EnchantedDoor:
+```java
+package pl.agh.edu.dp.labirynth.MazeElements.Doors;
+
+import pl.agh.edu.dp.labirynth.MazeElements.Rooms.Room;
+
+public class EnchantedDoor extends Door {
+    public EnchantedDoor(Room r1, Room r2) {
+        super(r1, r2);
+    }
+
+    @Override
+    public void Enter() throws Exception {
+        System.out.println("You opened enchanted door");
+    }
+}
+```
+
+Klasa EnchantedWall:
+```java
+package pl.agh.edu.dp.labirynth.MazeElements.Walls;
+
+public class EnchantedWall extends Wall {
+
+    @Override
+    public void Enter(){
+        System.out.println("You hit Enchanted wall");
+
+    }
+}
+```
+
+Następnie stworzono klasę EnchantedMazeFactory (fabryka magicznych labiryntów), która dziedziczy z MazeFactory.
+
+```java
+package pl.agh.edu.dp.labirynth.Factory;
+
+import pl.agh.edu.dp.labirynth.Factory.MazeFactory;
+import pl.agh.edu.dp.labirynth.MazeElements.Doors.Door;
+import pl.agh.edu.dp.labirynth.MazeElements.Doors.EnchantedDoor;
+import pl.agh.edu.dp.labirynth.MazeElements.Rooms.EnchantedRoom;
+import pl.agh.edu.dp.labirynth.MazeElements.Rooms.Room;
+import pl.agh.edu.dp.labirynth.MazeElements.Walls.EnchantedWall;
+import pl.agh.edu.dp.labirynth.MazeElements.Walls.Wall;
+import pl.agh.edu.dp.labirynth.Utils.Vector2d;
+
+public class EnchantedMazeFactory extends MazeFactory {
+
+    @Override
+    public Door createDoor(Room r1, Room r2) {
+        return new EnchantedDoor(r1, r2);
+    }
+
+    @Override
+    public Room createRoom(Vector2d pos) {
+        return new EnchantedRoom(pos);
+    }
+
+    @Override
+    public Wall createWall() {
+        return new EnchantedWall();
+    }
+}
+```
+
+### 4. Klasa BombedMazeFactory
+Stworzono klasy reprezentujące pokoje, drzwi i ściany, dziedziczące odpowiednio po klasach Room, Door, Wall.
+
+Klasa BombedRoom:
+```java
+package pl.agh.edu.dp.labirynth.MazeElements.Rooms;
+
+import pl.agh.edu.dp.labirynth.Utils.Vector2d;
+
+public class BombedRoom extends Room {
+
+    public BombedRoom(Vector2d position) {
+        super(position);
+    }
+
+    @Override
+    public void Enter(){
+        System.out.println("You entered bombed room");
+    }
+}
+```
+
+Klasa BombedDoor:
+```java
+package pl.agh.edu.dp.labirynth.MazeElements.Doors;
+
+import pl.agh.edu.dp.labirynth.MazeElements.Rooms.Room;
+
+public class BombedDoor extends Door {
+    public BombedDoor(Room r1, Room r2) {
+        super(r1, r2);
+    }
+
+    @Override
+    public void Enter() throws Exception {
+        System.out.println("You opened bombed door");
+    }
+}
+```
+
+Klasa BombedWall:
+```java
+package pl.agh.edu.dp.labirynth.MazeElements.Walls;
+
+public class BombedWall extends Wall {
+
+    @Override
+    public void Enter(){
+        System.out.println("You hit bombed wall");
+
+    }
+}
+```
+
+Następnie stworzono klasę BombedMazeFactory, która dziedziczy z MazeFactory.
+
+```java
+package pl.agh.edu.dp.labirynth.Factory;
+
+
+import pl.agh.edu.dp.labirynth.MazeElements.Doors.BombedDoor;
+import pl.agh.edu.dp.labirynth.MazeElements.Doors.Door;
+import pl.agh.edu.dp.labirynth.MazeElements.Rooms.BombedRoom;
+import pl.agh.edu.dp.labirynth.MazeElements.Rooms.Room;
+import pl.agh.edu.dp.labirynth.MazeElements.Walls.BombedWall;
+import pl.agh.edu.dp.labirynth.MazeElements.Walls.Wall;
+import pl.agh.edu.dp.labirynth.Utils.Vector2d;
+
+public class BombedMazeFactory extends MazeFactory{
+
+    @Override
+    public Door createDoor(Room r1, Room r2) {
+        return new BombedDoor(r1, r2);
+    }
+
+    @Override
+    public Room createRoom(Vector2d pos) {
+        return new BombedRoom(pos);
+    }
+
+    @Override
+    public Wall createWall() {
+        return new BombedWall();
+    }
+}
+```
