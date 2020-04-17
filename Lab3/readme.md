@@ -782,7 +782,7 @@ class BombedMazeFactoryTest {
 
 ![](res/2020-04-17-22-15-53.png)
 
-Jak widać powyżej, test przebiegły pomyślnie. Zatem MazeFactory faktycznie jest Singletonem.
+Jak widać powyżej, testy przebiegły pomyślnie. Zatem MazeFactory faktycznie jest Singletonem.
 
 ## 4.5 Dla chętnych!
 Dodano prostą wizualizację wykorzystując bibliotekę **JavaFX**.
