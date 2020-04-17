@@ -285,6 +285,42 @@ public class Vector2d {
 }
 ```
 
+Do klasy Maze dodano metodę findRoom - zwracającą pokój w labiryncie, znajdujący się na danej pozycji.
+
+```java
+package pl.agh.edu.dp.labirynth;
+
+import lombok.Getter;
+import pl.agh.edu.dp.labirynth.MazeElements.Rooms.Room;
+import pl.agh.edu.dp.labirynth.Utils.Vector2d;
+import java.util.Optional;
+import java.util.Vector;
+
+@Getter
+public class Maze {
+
+    private Vector<Room> rooms;
+
+    public Maze() {
+        this.rooms = new Vector<Room>();
+    }
+
+    public void addRoom(Room room){
+        rooms.add(room);
+    }
+
+    public Room findRoom(Vector2d pos) throws Exception {
+        Optional<Room> foundRoom =  rooms.stream().filter(room -> room.getPosition().equals(pos)).findAny();
+        if(foundRoom.isPresent()) return foundRoom.get();
+        throw new Exception("Error: Room with that number doesnt exist");
+    }
+
+    public int getRoomNumbers() {
+        return rooms.size();
+    }
+}
+```
+
 Następnie do klasy Room dodano zmienną Vector2d odwzorowującą pozycję w labiryncie.
 
 ```java
@@ -617,3 +653,719 @@ public class BombedMazeFactory extends MazeFactory{
     ...
 }
 ```
+
+Następnie do klasy StandardMazeBuilder dodano atrybut MazeFactory i zmodyfikowano metodę createDoorBetweenRooms, tworząc Drzwi za pomocą fabryki.
+
+```java
+package pl.agh.edu.dp.labirynth.Builder;
+
+import lombok.Getter;
+import pl.agh.edu.dp.labirynth.*;
+import pl.agh.edu.dp.labirynth.Factory.MazeFactory;
+import pl.agh.edu.dp.labirynth.MazeElements.Doors.Door;
+import pl.agh.edu.dp.labirynth.MazeElements.MapSite;
+import pl.agh.edu.dp.labirynth.MazeElements.Rooms.Room;
+import pl.agh.edu.dp.labirynth.MazeElements.Walls.Wall;
+import pl.agh.edu.dp.labirynth.Utils.Direction;
+import pl.agh.edu.dp.labirynth.Utils.Vector2d;
+
+public class StandardMazeBuilder implements MazeBuilder {
+
+    @Getter
+    Maze currentMaze;
+    private MazeFactory factory;
+
+    public StandardMazeBuilder(MazeFactory factory) {
+        this.currentMaze = new Maze();
+        this.factory=factory;
+    }
+
+
+    @Override
+    public void addRoom(Room room) {
+        room.setSide(Direction.North, factory.createWall());
+        room.setSide(Direction.East, factory.createWall());
+        room.setSide(Direction.South, factory.createWall());
+        room.setSide(Direction.West, factory.createWall());
+        currentMaze.addRoom(room);
+    }
+
+    @Override
+    public void createDoorBetweenRooms(Room r1, Room r2) throws Exception {
+
+        Direction firstRoomDir = commonWall(r1, r2);
+
+        Door door = factory.createDoor(r1, r2);
+
+        r1.setSide(firstRoomDir, door);
+        r2.setSide(firstRoomDir.getOppositeSide(), door);
+    }
+
+    @Override
+    public void createCommonWall(Direction firstRoomDir, Room r1, Room r2) throws Exception {
+        MapSite side = r1.getSide(firstRoomDir);
+        r2.setSide(firstRoomDir.getOppositeSide(), side);
+
+    }
+
+    private Direction commonWall(Room r1, Room r2) throws Exception {
+        for (Direction dir1 : Direction.values()) {
+            if (r1.getSide(dir1).equals(r2.getSide(dir1.getOppositeSide()))) {
+                return dir1;
+            }
+        }
+        throw new Exception("Rooms doesnt have common wall");
+    }
+
+    public Room findRoom(Vector2d pos) throws Exception {
+        return currentMaze.findRoom(pos);
+    }
+}
+```
+
+## 4.4 Rozszerzenie aplikacji labirynt
+### a) Mechanizm przemieszczania się po labiryncie
+Stworzono klasę Player, która za pomocą strzałek będzie mogła zadecydować o kierunku chodzenia.
+
+| Atrybut | Typ | Znaczenie |
+|---------|-----|-----------|
+|currentRoom| Room | pokój, w którym obecnie znajduje się gracz|
+|pos   | Vector2d| pozycja, na której znajduje się gracz|
+
+```java
+package pl.agh.edu.dp.labirynth;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+import pl.agh.edu.dp.labirynth.MazeElements.Rooms.Room;
+import pl.agh.edu.dp.labirynth.Utils.Vector2d;
+
+@AllArgsConstructor
+@Setter
+@Getter
+public class Player {
+
+    Room currentRoom;
+    Vector2d pos;
+}
+```
+Zrezygnowano z prostego wyświetlania, ponieważ wykonano podpunkt **4.5** i zaimplementowano wizualizację w JavaFX (kod we wspomnianym podpunkcie).
+
+
+
+### b) Przetestowanie Singletonu
+Poniżej sprawdzono, czy MazeFactory jest Singletonem.
+```java
+package pl.agh.edu.dp.labirynth.Factory;
+
+import org.junit.jupiter.api.Test;
+import static org.junit.Assert.*;
+
+class BombedMazeFactoryTest {
+
+    @Test
+    void getInstance() {
+        MazeFactory factory = EnchantedMazeFactory.getInstance();
+
+        assertEquals(factory, EnchantedMazeFactory.getInstance());
+        assertEquals(factory, EnchantedMazeFactory.getInstance());
+        assertEquals(factory, EnchantedMazeFactory.getInstance());
+
+        MazeFactory factory2 = BombedMazeFactory.getInstance();
+
+        assertEquals(factory2, BombedMazeFactory.getInstance());
+        assertNotEquals(factory, factory2);
+    }
+}
+```
+
+![](res/2020-04-17-22-15-53.png)
+
+Jak widać powyżej, test przebiegły pomyślnie. Zatem MazeFactory faktycznie jest Singletonem.
+
+## 4.5 Dla chętnych!
+Dodano prostą wizualizację wykorzystując bibliotekę **JavaFX**.
+
+### Klasa Door
+Rozszerzono klasę Door o kilka metod.
+
+| Metoda | Typ | Znaczenie |
+|---------|-----|-----------|
+|getRoomAtOthersSide| Room | zwraca pokój, znajdujący się po drugiej stronie drzwi|
+|movePlayerToOtherSide   | void| przenosi gracza do pokoju, po drugiej stronie drzwi|
+|enter   | void| przejście przez drzwi|
+
+
+
+```java
+package pl.agh.edu.dp.labirynth.MazeElements.Doors;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+import pl.agh.edu.dp.labirynth.MazeElements.MapSite;
+import pl.agh.edu.dp.labirynth.MazeElements.Rooms.Room;
+import pl.agh.edu.dp.labirynth.MazeGame;
+
+@Getter
+@Setter
+@AllArgsConstructor
+public class Door extends MapSite {
+    private Room room1;
+    private Room room2;
+
+    public Room getRoomAtOthersSide(Room firstR) {
+        return room1 == firstR ? room2 : room1;
+    }
+
+    void movePlayerToOtherSide() throws Exception {
+        Room newRoom = getRoomAtOthersSide(MazeGame.getInstance().getPlayer().getCurrentRoom());
+        newRoom.Enter();
+        MazeGame.getInstance().movePlayerTo(newRoom);
+    }
+
+    @Override
+    public void Enter() throws Exception {
+        System.out.println("You opened normal door");
+        movePlayerToOtherSide();
+    }
+
+}
+```
+
+### Klasa BombedDoor
+Dopisano do metody Enter wywołanie metody movePlayerToOtherSide.
+
+```java
+package pl.agh.edu.dp.labirynth.MazeElements.Doors;
+
+public class BombedDoor extends Door {
+    ...
+
+    @Override
+    public void Enter() throws Exception {
+        System.out.println("You opened bombed door");
+        movePlayerToOtherSide();
+    }
+}
+```
+
+### Klasa EnchantedDoor
+Powyższą czynność powtórzono również dla tej klasy.
+
+```java
+package pl.agh.edu.dp.labirynth.MazeElements.Doors;
+
+public class EnchantedDoor extends Door {
+    ...
+
+    @Override
+    public void Enter() throws Exception {
+        System.out.println("You opened enchanted door");
+        movePlayerToOtherSide();
+    }
+}
+```
+
+### Interfejs MazeBuilder
+Do interfejsu dodano metodę findRoom, znajdującą pokój na danej pozycji.
+
+```java
+package pl.agh.edu.dp.labirynth.Builder;
+
+import pl.agh.edu.dp.labirynth.Utils.Direction;
+import pl.agh.edu.dp.labirynth.MazeElements.Rooms.Room;
+import pl.agh.edu.dp.labirynth.Utils.Vector2d;
+
+public interface MazeBuilder {
+
+    void addRoom(Room room);
+    void createDoorBetweenRooms(Room r1, Room r2) throws Exception;
+    void createCommonWall(Direction firstRoomDir, Room r1, Room r2) throws Exception;
+    Room findRoom(Vector2d pos) throws Exception;
+}
+```
+
+### Klasa CountingMazeBuilder
+Zmieniono klasę CountingMazeBuilder z klasy implementującej interfejs MazeBuilder na klasę rozszerzającą StandardMazeBuilder. Dodano do niej atrybut RightLowerPos reprezentujący pozycję prawego - dolnego rogu na mapie (lewy - górny to punkt (0,0)). Zmodyfikowano również metodę addRoom tak, aby przy każdym dodaniu pokoju, modyfikowała graniczny punkt na mapie.
+
+```java
+package pl.agh.edu.dp.labirynth.Builder;
+
+import lombok.Getter;
+import pl.agh.edu.dp.labirynth.Factory.MazeFactory;
+import pl.agh.edu.dp.labirynth.Utils.Direction;
+import pl.agh.edu.dp.labirynth.MazeElements.Rooms.Room;
+import pl.agh.edu.dp.labirynth.Utils.Vector2d;
+
+@Getter
+public class CountingMazeBuilder extends StandardMazeBuilder {
+
+    private int roomsNr;
+    private int doorsNr;
+    private int wallNr;
+    private Vector2d RightLowerPos;
+
+    public CountingMazeBuilder(MazeFactory factory) {
+        super(factory);
+        this.roomsNr = 0;
+        this.doorsNr = 0;
+        this.wallNr = 0;
+        RightLowerPos = new Vector2d(0, 0);
+    }
+
+    @Override
+    public void addRoom(Room room) {
+        super.addRoom(room);
+        roomsNr++;
+        wallNr += 4;
+
+        RightLowerPos = RightLowerPos.lowerRight(room.getPosition());
+    }
+
+    @Override
+    public void createDoorBetweenRooms(Room r1, Room r2) throws Exception {
+        super.createDoorBetweenRooms(r1,r2);
+        wallNr--;
+        doorsNr++;
+    }
+
+    @Override
+    public void createCommonWall(Direction firstRoomDir, Room r1, Room r2) throws Exception {
+        super.createCommonWall(firstRoomDir, r1, r2);
+        wallNr--;
+    }
+
+    public int getCounts() {
+        return roomsNr + wallNr + doorsNr;
+    }
+}
+```
+
+### Klasa MazeGame
+Znacznie rozbudowano klasę MazeGame dodając do niej poniższe atrybuty i metody.
+
+| Atrybut | Typ | Znaczenie |
+|---------|-----|-----------|
+|maze| Maze | labirynt|
+|player | Player| gracz|
+|rightLowerPos   | Vector2d| współrzędne graniczne prawego - dolnego rogu|
+|instance   | MazeGame| instancja gry|
+
+| Metoda | Typ | Znaczenie |
+|---------|-----|-----------|
+|getInstance| MazeGame | zwraca instancję gry lub jeżeli gra nie istnieje - to ją tworzy|
+|createMaze   | void| tworzy labirynt |
+|makeMove   | void| wykonuje ruch gracza w danym kierunku|
+|movePlayerTo   | void| zmienia obecny pokój i współrzędne gracza na nowe|
+|createPlayerAt   | void| tworzy gracza na danej pozycji|
+|buildSampleMaze   | void| buduje przykładowy labirynt|
+
+
+```java
+package pl.agh.edu.dp.labirynth;
+
+import lombok.Getter;
+import lombok.Setter;
+import pl.agh.edu.dp.labirynth.Builder.CountingMazeBuilder;
+import pl.agh.edu.dp.labirynth.Factory.BombedMazeFactory;
+import pl.agh.edu.dp.labirynth.MazeElements.Doors.Door;
+import pl.agh.edu.dp.labirynth.MazeElements.MapSite;
+import pl.agh.edu.dp.labirynth.MazeElements.Walls.Wall;
+import pl.agh.edu.dp.labirynth.Utils.*;
+import pl.agh.edu.dp.labirynth.Builder.StandardMazeBuilder;
+import pl.agh.edu.dp.labirynth.Factory.EnchantedMazeFactory;
+import pl.agh.edu.dp.labirynth.Factory.MazeFactory;
+import pl.agh.edu.dp.labirynth.MazeElements.Rooms.Room;
+
+import static pl.agh.edu.dp.labirynth.Utils.Direction.*;
+
+@Getter
+@Setter
+public class MazeGame {
+
+    private Maze maze;
+    private Player player;
+    private Vector2d rightLowerPos;
+
+    private static MazeGame instance;
+
+    public static MazeGame getInstance() {
+        if( instance == null){
+            instance = new MazeGame();
+        }
+        return instance;
+    }
+
+
+    public void createMaze(CountingMazeBuilder builder, MazeFactory factory) throws Exception {
+        buildSampleMaze(builder, factory);
+        this.rightLowerPos = builder.getRightLowerPos();
+        this.maze= builder.getCurrentMaze();
+    }
+
+    public void makeMove(Direction dir) throws Exception {
+        MapSite side = player.currentRoom.getSide(dir);
+        side.Enter();
+
+    }
+
+    public void movePlayerTo(Room room){
+        player.setCurrentRoom(room);
+        player.setPos(room.getPosition());
+    }
+
+    public void createPlayerAt(Vector2d playerPos) throws Exception {
+        this.player = new Player(maze.findRoom(playerPos), playerPos);
+    }
+
+
+    /* below sample 5 by 5 maze hardcoded for simplicity */
+    private void buildSampleMaze(CountingMazeBuilder builder, MazeFactory factory) throws Exception {
+
+        /* Add every room and make common walls with neighbours */
+        for (int i = 0; i < 5; i++) {
+            for (int j = 0; j < 5; j++) {
+                Room currRoom = factory.createRoom(new Vector2d(i, j));
+                builder.addRoom(currRoom);
+
+                if (j > 0)
+                    builder.createCommonWall(North, currRoom, builder.findRoom(new Vector2d(i, j - 1)));
+                if (i > 0)
+                    builder.createCommonWall(West, currRoom, builder.findRoom(new Vector2d(i - 1, j)));
+            }
+        }
+
+        /* long code ahead, nothing else at bottom ;) */
+        builder.createDoorBetweenRooms(
+                builder.findRoom(new Vector2d(0, 0)),
+                builder.findRoom(new Vector2d(1, 0))
+        );
+
+        builder.createDoorBetweenRooms(
+                builder.findRoom(new Vector2d(0, 0)),
+                builder.findRoom(new Vector2d(0, 1))
+        );
+
+        builder.createDoorBetweenRooms(
+                builder.findRoom(new Vector2d(0, 1)),
+                builder.findRoom(new Vector2d(0, 2))
+        );
+
+        builder.createDoorBetweenRooms(
+                builder.findRoom(new Vector2d(1, 0)),
+                builder.findRoom(new Vector2d(1, 1))
+        );
+        builder.createDoorBetweenRooms(
+                builder.findRoom(new Vector2d(0, 2)),
+                builder.findRoom(new Vector2d(1, 2))
+        );
+
+        builder.createDoorBetweenRooms(
+                builder.findRoom(new Vector2d(0, 2)),
+                builder.findRoom(new Vector2d(0, 3))
+        );
+
+        builder.createDoorBetweenRooms(
+                builder.findRoom(new Vector2d(1, 3)),
+                builder.findRoom(new Vector2d(0, 3))
+        );
+
+        builder.createDoorBetweenRooms(
+                builder.findRoom(new Vector2d(1, 3)),
+                builder.findRoom(new Vector2d(1, 4))
+        );
+
+        builder.createDoorBetweenRooms(
+                builder.findRoom(new Vector2d(0, 4)),
+                builder.findRoom(new Vector2d(1, 4))
+        );
+        builder.createDoorBetweenRooms(
+                builder.findRoom(new Vector2d(2, 0)),
+                builder.findRoom(new Vector2d(3, 0))
+        );
+        builder.createDoorBetweenRooms(
+                builder.findRoom(new Vector2d(4, 0)),
+                builder.findRoom(new Vector2d(3, 0))
+        );
+        builder.createDoorBetweenRooms(
+                builder.findRoom(new Vector2d(4, 0)),
+                builder.findRoom(new Vector2d(4, 1))
+        );
+        builder.createDoorBetweenRooms(
+                builder.findRoom(new Vector2d(4, 0)),
+                builder.findRoom(new Vector2d(4, 1))
+        );
+        builder.createDoorBetweenRooms(
+                builder.findRoom(new Vector2d(3, 1)),
+                builder.findRoom(new Vector2d(4, 1))
+        );
+        builder.createDoorBetweenRooms(
+                builder.findRoom(new Vector2d(3, 1)),
+                builder.findRoom(new Vector2d(2, 1))
+        );
+        builder.createDoorBetweenRooms(
+                builder.findRoom(new Vector2d(2, 2)),
+                builder.findRoom(new Vector2d(2, 1))
+        );
+        builder.createDoorBetweenRooms(
+                builder.findRoom(new Vector2d(2, 2)),
+                builder.findRoom(new Vector2d(1, 2))
+        );
+        builder.createDoorBetweenRooms(
+                builder.findRoom(new Vector2d(3, 1)),
+                builder.findRoom(new Vector2d(3, 2))
+        );
+        builder.createDoorBetweenRooms(
+                builder.findRoom(new Vector2d(4, 2)),
+                builder.findRoom(new Vector2d(3, 2))
+        );
+        builder.createDoorBetweenRooms(
+                builder.findRoom(new Vector2d(4, 2)),
+                builder.findRoom(new Vector2d(4, 3))
+        );
+        builder.createDoorBetweenRooms(
+                builder.findRoom(new Vector2d(3, 3)),
+                builder.findRoom(new Vector2d(4, 3))
+        );
+        builder.createDoorBetweenRooms(
+                builder.findRoom(new Vector2d(3, 3)),
+                builder.findRoom(new Vector2d(3, 4))
+        );
+        builder.createDoorBetweenRooms(
+                builder.findRoom(new Vector2d(4, 4)),
+                builder.findRoom(new Vector2d(3, 4))
+        );
+        builder.createDoorBetweenRooms(
+                builder.findRoom(new Vector2d(3, 3)),
+                builder.findRoom(new Vector2d(2, 3))
+        );
+        builder.createDoorBetweenRooms(
+                builder.findRoom(new Vector2d(2, 4)),
+                builder.findRoom(new Vector2d(2, 3))
+        );
+    }
+
+}
+```
+
+## GUI
+Stworzono dwie klasy: GameFrame i GameScene do wizualizacji aplikacji, używając JavaFX.
+
+### Klasa GameFrame
+```java
+package pl.agh.edu.dp.gui;
+
+import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.scene.layout.Pane;
+import javafx.stage.Stage;
+import pl.agh.edu.dp.labirynth.Builder.CountingMazeBuilder;
+import pl.agh.edu.dp.labirynth.Factory.BombedMazeFactory;
+import pl.agh.edu.dp.labirynth.Factory.EnchantedMazeFactory;
+import pl.agh.edu.dp.labirynth.Factory.MazeFactory;
+import pl.agh.edu.dp.labirynth.MazeGame;
+import pl.agh.edu.dp.labirynth.Utils.Vector2d;
+
+import static pl.agh.edu.dp.labirynth.Utils.Direction.*;
+
+
+public class GameFrame extends Application {
+
+
+    /* ================= Edit here  ================= */
+    static final int PIXEL_SIZE = 64;
+    static final int WALL_THICKNESS = 2;
+
+    private void SetupMaze(Stage stage) throws Exception {
+        stage.setTitle("MazeGame3000");
+
+        /* What factory and builder */
+        MazeFactory factory = EnchantedMazeFactory.getInstance();
+        CountingMazeBuilder builder = new CountingMazeBuilder(factory);
+
+        mazeGame.createMaze(builder, factory);
+
+        /* Starting pos of player */
+        Vector2d playerPos = new Vector2d(4, 0);
+
+        mazeGame.createPlayerAt(playerPos);
+    }
+
+    /* ================= GameFrame  ================= */
+
+    private MazeGame mazeGame;
+
+    @Override
+    public void start(Stage stage) throws Exception {
+
+        this.mazeGame =  MazeGame.getInstance();
+        SetupMaze(stage);
+        int mapHeight = (mazeGame.getRightLowerPos().y + 1) * PIXEL_SIZE + (mazeGame.getRightLowerPos().y + 2) * WALL_THICKNESS;
+        int mapWidth = (mazeGame.getRightLowerPos().x + 1) * PIXEL_SIZE + (mazeGame.getRightLowerPos().x + 2) * WALL_THICKNESS;
+
+        stage.setResizable(false);
+        stage.setOnCloseRequest(event -> Platform.exit());
+
+        Pane rootNode = new Pane();
+        GameScene gameScene = new GameScene(rootNode, mapWidth, mapHeight);
+        refresh(gameScene);
+        gameScene.setOnKeyPressed(event -> {
+
+            try {
+                switch (event.getCode()) {
+                    case LEFT:
+                        mazeGame.makeMove(West);
+                        break;
+                    case RIGHT:
+                        mazeGame.makeMove(East);
+                        break;
+                    case DOWN:
+                        mazeGame.makeMove(South);
+                        break;
+                    case UP:
+                        mazeGame.makeMove(North);
+                        break;
+                }
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+            refresh(gameScene);
+
+        });
+        stage.setScene(gameScene);
+        stage.show();
+
+    }
+
+    private void refresh(GameScene gameScene) {
+        gameScene.genTiles(
+                mazeGame.getMaze().getRooms(),
+                mazeGame.getPlayer().getPos(),
+                mazeGame.getRightLowerPos()
+        );
+    }
+
+
+    public void show(String[] args){
+        launch(args);
+    }
+}
+```
+
+### Klasa GameScene
+Stworzono klasę GameScene rozszerzającą Scene.
+
+```java
+package pl.agh.edu.dp.gui;
+
+import javafx.scene.Group;
+import javafx.scene.Scene;
+import javafx.scene.layout.Pane;
+import pl.agh.edu.dp.labirynth.MazeElements.Rooms.Room;
+import pl.agh.edu.dp.labirynth.MazeElements.Walls.Wall;
+import pl.agh.edu.dp.labirynth.Utils.Vector2d;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.paint.Color;
+
+import java.util.Vector;
+
+import static pl.agh.edu.dp.gui.GameFrame.PIXEL_SIZE;
+import static pl.agh.edu.dp.gui.GameFrame.WALL_THICKNESS;
+import static pl.agh.edu.dp.labirynth.Utils.Direction.*;
+
+class GameScene extends Scene {
+
+    private Group group;
+
+    GameScene(Pane rootPane, int width, int height) {
+        super(rootPane, width, height);
+        group = new Group();
+        rootPane.getChildren().add(group);
+    }
+
+    void genTiles(Vector<Room> rooms, Vector2d playerPos, Vector2d lowerRight) {
+        group.getChildren().clear();
+
+        /* Generates pixels at corners, so there isn't weird space */
+        Group cornerGroup = new Group();
+        for (int i = 0; i <= lowerRight.x + 1; i++) {
+            for (int j = 0; j <= lowerRight.y + 1; j++) {
+                Vector2d posOnCanvas = getRoomPosOnCanvas(new Vector2d(i, j));
+                addRectangle(WALL_THICKNESS, WALL_THICKNESS, posOnCanvas.x, posOnCanvas.y, cornerGroup, Color.BLACK);
+            }
+        }
+        group.getChildren().add(cornerGroup);
+
+        rooms.forEach(room -> {
+
+            Vector2d posOnCanvas = getRoomPosOnCanvas(room.getPosition());
+            Group tileGroup = new Group();
+
+            if (room.getSide(North) instanceof Wall)
+                addRectangle(PIXEL_SIZE, WALL_THICKNESS, posOnCanvas.x + WALL_THICKNESS, posOnCanvas.y, tileGroup, Color.BLACK);
+
+            if (room.getSide(East) instanceof Wall)
+                addRectangle(WALL_THICKNESS, PIXEL_SIZE, posOnCanvas.x + WALL_THICKNESS + PIXEL_SIZE, posOnCanvas.y + WALL_THICKNESS, tileGroup, Color.BLACK);
+
+            if (room.getSide(South) instanceof Wall)
+                addRectangle(PIXEL_SIZE, WALL_THICKNESS, posOnCanvas.x + WALL_THICKNESS, posOnCanvas.y + WALL_THICKNESS + PIXEL_SIZE, tileGroup, Color.BLACK);
+
+            if (room.getSide(West) instanceof Wall)
+                addRectangle(WALL_THICKNESS, PIXEL_SIZE, posOnCanvas.x, posOnCanvas.y + WALL_THICKNESS, tileGroup, Color.BLACK);
+
+            group.getChildren().add(tileGroup);
+        });
+
+        /* Player rectangle */
+        Vector2d posOnCanvas = getRoomPosOnCanvas(playerPos);
+        addRectangle(
+                PIXEL_SIZE,
+                PIXEL_SIZE,
+                posOnCanvas.x + WALL_THICKNESS,
+                posOnCanvas.y + WALL_THICKNESS,
+                group,
+                Color.GREEN
+        );
+    }
+
+    private void addRectangle(int width, int height, int x, int y, Group tileGroup, Color color) {
+        Rectangle rectangle = new Rectangle(width, height);
+        rectangle.setFill(color);
+        rectangle.setX(x);
+        rectangle.setY(y);
+        tileGroup.getChildren().add(rectangle);
+    }
+
+
+    private Vector2d getRoomPosOnCanvas(Vector2d relativeRoomPos) {
+        return new Vector2d(
+                relativeRoomPos.x * (PIXEL_SIZE + WALL_THICKNESS),
+                relativeRoomPos.y * (PIXEL_SIZE + WALL_THICKNESS)
+        );
+    }
+}
+```
+
+### Klasa Main
+Zastosowanie powyższych klas pozwoliło na znaczne uproszczenie klasy Main.
+
+```java
+package pl.agh.edu.dp.main;
+
+import pl.agh.edu.dp.gui.GameFrame;
+
+public class Main {
+
+    public static void main(String[] args) throws Exception {
+        GameFrame gf = new GameFrame();
+        gf.show(args);
+    }
+}
+```
+
+## Efekt końcowy
+![](res/2020-04-17-23-11-40.png)
+
+![](res/2020-04-17-23-12-59.png)
