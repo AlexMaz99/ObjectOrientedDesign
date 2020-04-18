@@ -1155,9 +1155,9 @@ Stworzono dwie klasy: GameFrame i GameScene do wizualizacji aplikacji, używają
 ### Klasa GameFrame
 
 
-Z powodu ograniczeń jakie niesie ze sobą rozszerzenie klasy o Application nie możnabyło napisać konstruktora i do niego przekazać zmienne typu builder czy Factory. Z tego powodu utworzono osobną funkcję `SetupMaze(s)` w której można łatwo edytować tytuł, z jakiego factory oraz buildera korzystamy oraz pozycje startową gracza, a także wielkość pokoi oraz grubość scian.
+Z powodu ograniczeń jakie niesie ze sobą rozszerzenie klasy o Application, nie można było napisać konstruktora i do niego przekazać zmiennych typu Builder czy Factory. Z tego powodu utworzono osobną funkcję `SetupMaze(s)`, w której można łatwo edytować tytuł, z jakiego factory oraz builder korzystają oraz pozycje startową gracza, a także wielkość pokoi oraz grubość ścian.
 
-Funkcja start przygotowywuje okno i inicjuje `GameScene`, które bedzie odpowiedzialne za renderowanie graficzne oraz dodaje akcje wykonywane przy wcisnieciu klawiszy strzałek
+Funkcja start przygotowywuje okno i inicjuje `GameScene`, które będzie odpowiedzialne za renderowanie graficzne oraz dodaje akcje wykonywane przy wciśnięciu klawiszy strzałek.
 
 
 ```java
@@ -1265,13 +1265,13 @@ Stworzono klasę GameScene rozszerzającą Scene.
 
 Dodano funcje pomocnicze 
 
-`getRoomPosOnCanvas(Vector2d relativeRoomPos)` która na podstawie współrzędnych prostych tzn kazdy potencjalny pokój to jedno pole na układzie współrzednych oblicza lewy górny róg obiektu, który może być potem narysowany.
+`getRoomPosOnCanvas(Vector2d relativeRoomPos)`, która na podstawie współrzędnych prostych (każdy potencjalny pokój to jedno pole na układzie współrzędnych), oblicza lewy górny róg obiektu, który może być potem narysowany.
 
-`addRectangle(int width, int height, int x, int y, Group tileGroup, Color color)` która agreguje w jedną funkcje proces tworzenia prostokąta oraz dodaje do podane w funkcji grupy ten prostokąt 
+`addRectangle(int width, int height, int x, int y, Group tileGroup, Color color)`, która agreguje w jedną funkcje proces tworzenia prostokąta oraz dodaje, do podanej w funkcji grupy, ten prostokąt.
 
-Funkcja główna `genTiles` przyjmuje pokoje, pozycje gracza oraz lewy dolny róg, ten ostatni pomaga nam w narysowaniu małych pixeli na rogach pokoi.
+Funkcja główna `genTiles` przyjmuje pokoje, pozycje gracza oraz lewy dolny róg. Ten ostatni pomaga w narysowaniu małych pixeli na rogach pokoi.
 
-Prostokąty odpowiadające za sciany są generowane poprzez sprawdzanie obecnosci scian dla każdego pokoju i generowaniu odpowiednich prostokątów (raz poziomych, raz pionowych) o rozmiarach wyliczonych relatywnie do lewego górnego rogu). Jest to pewne uproszczenie w kodzie, które skutkuje teorytyczny "dwukrotnym" narysowaniem niektórych scian
+Prostokąty odpowiadające za ściany są generowane poprzez sprawdzanie obecności ścian dla każdego pokoju i generowaniu odpowiednich prostokątów (raz poziomych, raz pionowych) o rozmiarach wyliczonych relatywnie do lewego górnego rogu. Jest to pewne uproszczenie w kodzie, które skutkuje teorytycznym "dwukrotnym" narysowaniem niektórych ścian.
 
 ```java
 package pl.agh.edu.dp.gui;
