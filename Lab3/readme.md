@@ -1,7 +1,6 @@
 # Laboratorium 3 - Wzorce Projektowe
 ## Aleksandra Mazur, Grzegorz Poręba
 
-
 ## 4.1. Builder
 ### 1. Interfejs MazeBuilder
 Stworzono interfejs MazeBuilder, służący do tworzenia labiryntów.
@@ -1154,6 +1153,13 @@ public class MazeGame {
 Stworzono dwie klasy: GameFrame i GameScene do wizualizacji aplikacji, używając JavaFX.
 
 ### Klasa GameFrame
+
+
+Z powodu ograniczeń jakie niesie ze sobą rozszerzenie klasy o Application nie możnabyło napisać konstruktora i do niego przekazać zmienne typu builder czy Factory. Z tego powodu utworzono osobną funkcję `SetupMaze(s)` w której można łatwo edytować tytuł, z jakiego factory oraz buildera korzystamy oraz pozycje startową gracza, a także wielkość pokoi oraz grubość scian.
+
+Funkcja start przygotowywuje okno i inicjuje `GameScene`, które bedzie odpowiedzialne za renderowanie graficzne oraz dodaje akcje wykonywane przy wcisnieciu klawiszy strzałek
+
+
 ```java
 package pl.agh.edu.dp.gui;
 
@@ -1257,6 +1263,16 @@ public class GameFrame extends Application {
 ### Klasa GameScene
 Stworzono klasę GameScene rozszerzającą Scene.
 
+Dodano funcje pomocnicze 
+
+`getRoomPosOnCanvas(Vector2d relativeRoomPos)` która na podstawie współrzędnych prostych tzn kazdy potencjalny pokój to jedno pole na układzie współrzednych oblicza lewy górny róg obiektu, który może być potem narysowany.
+
+`addRectangle(int width, int height, int x, int y, Group tileGroup, Color color)` która agreguje w jedną funkcje proces tworzenia prostokąta oraz dodaje do podane w funkcji grupy ten prostokąt 
+
+Funkcja główna `genTiles` przyjmuje pokoje, pozycje gracza oraz lewy dolny róg, ten ostatni pomaga nam w narysowaniu małych pixeli na rogach pokoi.
+
+Prostokąty odpowiadające za sciany są generowane poprzez sprawdzanie obecnosci scian dla każdego pokoju i generowaniu odpowiednich prostokątów (raz poziomych, raz pionowych) o rozmiarach wyliczonych relatywnie do lewego górnego rogu). Jest to pewne uproszczenie w kodzie, które skutkuje teorytyczny "dwukrotnym" narysowaniem niektórych scian
+
 ```java
 package pl.agh.edu.dp.gui;
 
@@ -1349,6 +1365,7 @@ class GameScene extends Scene {
 ```
 
 ### Klasa Main
+
 Zastosowanie powyższych klas pozwoliło na znaczne uproszczenie klasy Main.
 
 ```java
