@@ -1,5 +1,5 @@
 # Projektowanie obiektowe - Refaktoryzacja
-## Aleksandra Mazur
+## Aleksandra Mazur, Grzegorz Poręba
 
 ### 1. Diagram UML na podstawie analizy kodu
 
