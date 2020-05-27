@@ -1,15 +1,11 @@
+# Projektowanie obiektowe - Testy jednostkowe
+## Aleksandra Mazur, Grzegorz Poręba
+
+### 1. Zmienić wartość procentową naliczanego podatku z 22% na 23%. Należy zweryfikować przypadki brzegowe przy zaokrągleniach.
+
+Zmodyfikowano wartość podatku z 22% na 23% w klasie `Order`.
+
 ```java
-package pl.edu.agh.internetshop;
-
-import pl.edu.agh.internetshop.MoneyTransfer.MoneyTransfer;
-import pl.edu.agh.internetshop.Shipment.Shipment;
-import pl.edu.agh.internetshop.Shipment.ShipmentMethod;
-
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.UUID;
-
-
 public class Order {
     private static final BigDecimal TAX_VALUE = BigDecimal.valueOf(1.23);
 	private final UUID id;
@@ -24,83 +20,37 @@ public class Order {
         id = UUID.randomUUID();
         paid = false;
     }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public void setPaymentMethod(PaymentMethod paymentMethod) {
-        this.paymentMethod = paymentMethod;
-    }
-
-    public PaymentMethod getPaymentMethod() {
-        return paymentMethod;
-    }
-
-    public boolean isSent() {
-        return shipment != null && shipment.isShipped();
-    }
-
-    public boolean isPaid() { return paid; }
-
-    public Shipment getShipment() {
-        return shipment;
-    }
-
-    public BigDecimal getPrice() {
-
-        return null;
-    }
-
-    public BigDecimal getPriceWithTaxes() {
-        return getPrice().multiply(TAX_VALUE).setScale(Product.PRICE_PRECISION, Product.ROUND_STRATEGY);
-    }
-
-    public List<Product> getProducts() {
-        return this.products;
-    }
-
-    public ShipmentMethod getShipmentMethod() {
-        return shipmentMethod;
-    }
-
-    public void setShipmentMethod(ShipmentMethod shipmentMethod) {
-        this.shipmentMethod = shipmentMethod;
-    }
-
-    public void send() {
-        boolean sentSuccesful = getShipmentMethod().send(shipment, shipment.getSenderAddress(), shipment.getRecipientAddress());
-        shipment.setShipped(sentSuccesful);
-    }
-
-    public void pay(MoneyTransfer moneyTransfer) {
-        moneyTransfer.setCommitted(getPaymentMethod().commit(moneyTransfer));
-        paid = moneyTransfer.isCommitted();
-    }
-
-    public void setShipment(Shipment shipment) {
-        this.shipment = shipment;
-    }
-}
+    ...
 ```
 
-
-
-
+Zmieniono test `testPriceWithTaxesWithoutRoundUp()`, który zwróciłby błąd po zmianie podatku.
 
 ```java
-package pl.edu.agh.internetshop;
+@Test
+    public void testPriceWithTaxesWithoutRoundUp() {
+        // given
 
-import pl.edu.agh.internetshop.MoneyTransfer.MoneyTransfer;
-import pl.edu.agh.internetshop.Shipment.Shipment;
-import pl.edu.agh.internetshop.Shipment.ShipmentMethod;
+        // when
+        Order order = getOrderWithCertainProductPrice(2); // 2 PLN
 
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
+        // then
+        assertBigDecimalCompareValue(order.getPriceWithTaxes(), BigDecimal.valueOf(2.46)); // 2.46 PLN
+    }
+```
 
+<div style="page-break-after: always;"></div>
 
+Po wprowadzonych zmianach wszystkie test przebiegły pomyślnie.
+
+![](res/2020-05-27-09-30-25.png)
+
+<div style="page-break-after: always;"></div>
+
+### 2. Rozszerzyć funkcjonalność systemu, tak aby zamówienie mogło obejmować więcej niż jeden produkt na raz.
+
+Zmodyfikowano klasę `Order`, tak aby zamiast pojedynczego produktu przechowywała listę produktów. Jednak nie zaimplementowano jeszcze wszystkich metod, na które wpłynęła ta zmiana. Przerobiono je tylko tak, żeby testy się kompilowały.
+
+```java
 public class Order {
     private static final BigDecimal TAX_VALUE = BigDecimal.valueOf(1.23);
     private final UUID id;
@@ -116,35 +66,8 @@ public class Order {
         paid = false;
     }
 
-    public UUID getId() {
-        return id;
-    }
-
-    public void setPaymentMethod(PaymentMethod paymentMethod) {
-        this.paymentMethod = paymentMethod;
-    }
-
-    public PaymentMethod getPaymentMethod() {
-        return paymentMethod;
-    }
-
-    public boolean isSent() {
-        return shipment != null && shipment.isShipped();
-    }
-
-    public boolean isPaid() {
-        return paid;
-    }
-
-    public Shipment getShipment() {
-        return shipment;
-    }
-
     public BigDecimal getPrice() {
-        return products
-                .stream()
-                .map(Product::getPrice)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        return null;
         
     }
 
@@ -155,56 +78,15 @@ public class Order {
     public List<Product> getProducts() {
         return this.products;
     }
-
-    public ShipmentMethod getShipmentMethod() {
-        return shipmentMethod;
-    }
-
-    public void setShipmentMethod(ShipmentMethod shipmentMethod) {
-        this.shipmentMethod = shipmentMethod;
-    }
-
-    public void send() {
-        boolean sentSuccesful = getShipmentMethod().send(shipment, shipment.getSenderAddress(), shipment.getRecipientAddress());
-        shipment.setShipped(sentSuccesful);
-    }
-
-    public void pay(MoneyTransfer moneyTransfer) {
-        moneyTransfer.setCommitted(getPaymentMethod().commit(moneyTransfer));
-        paid = moneyTransfer.isCommitted();
-    }
-
-    public void setShipment(Shipment shipment) {
-        this.shipment = shipment;
-    }
+    ...
 }
 ```
 
+<div style="page-break-after: always;"></div>
 
-
+Wprowadzono modyfikację w istniejących testach i dopisano kilka dodatkowych, sprawdzająych poprawność dokonanych zmian.
 
 ```java
-package pl.edu.agh.internetshop;
-
-import org.junit.jupiter.api.Test;
-import pl.edu.agh.internetshop.MoneyTransfer.MoneyTransfer;
-import pl.edu.agh.internetshop.MoneyTransfer.MoneyTransferPaymentTransaction;
-import pl.edu.agh.internetshop.Shipment.Shipment;
-import pl.edu.agh.internetshop.Shipment.ShipmentMethod;
-
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static pl.edu.agh.internetshop.util.CustomAssertions.assertBigDecimalCompareValue;
-
 public class OrderTest {
 
     private Order getOrderWithMockedProduct() {
@@ -226,27 +108,19 @@ public class OrderTest {
     }
 
     @Test
-    public void testSetShipment() throws Exception {
+    public void testProductsThroughOrder() {
         // given
-        Order order = getOrderWithMockedProduct();
-        Shipment expectedShipment = mock(Shipment.class);
+        Product expectedProduct1 = mock(Product.class);
+        Product expectedProduct2 = mock(Product.class);
+        Order order = new Order(Arrays.asList(expectedProduct1, expectedProduct2));
 
         // when
-        order.setShipment(expectedShipment);
+        List<Product> actualProducts = order.getProducts();
 
         // then
-        assertSame(expectedShipment, order.getShipment());
-    }
-
-    @Test
-    public void testShipmentWithoutSetting() throws Exception {
-        // given
-        Order order = getOrderWithMockedProduct();
-
-        // when
-
-        // then
-        assertNull(order.getShipment());
+        assertEquals(actualProducts.size(), 2);
+        assertSame(expectedProduct1, actualProducts.get(0));
+        assertSame(expectedProduct2, actualProducts.get(1));
     }
 
     @Test
@@ -301,153 +175,15 @@ public class OrderTest {
         // then
         assertBigDecimalCompareValue(expectedProductPrice, actualProductPrice);
     }
-
-    @Test
-    public void testPriceWithTaxesWithoutRoundUp() {
-        // given
-
-        // when
-        Order order = getOrderWithCertainProductPrice(2); // 2 PLN
-
-        // then
-        assertBigDecimalCompareValue(order.getPriceWithTaxes(), BigDecimal.valueOf(2.46)); // 2.46 PLN
-    }
-
-    @Test
-    public void testPriceWithTaxesWithRoundDown() {
-        // given
-
-        // when
-        Order order = getOrderWithCertainProductPrice(0.01); // 0.01 PLN
-
-        // then
-        assertBigDecimalCompareValue(order.getPriceWithTaxes(), BigDecimal.valueOf(0.01)); // 0.01 PLN
-
-    }
-
-    @Test
-    public void testPriceWithTaxesWithRoundUp() {
-        // given
-
-        // when
-        Order order = getOrderWithCertainProductPrice(0.03); // 0.03 PLN
-
-        // then
-        assertBigDecimalCompareValue(order.getPriceWithTaxes(), BigDecimal.valueOf(0.04)); // 0.04 PLN
-
-    }
-
-    @Test
-    public void testSetShipmentMethod() {
-        // given
-        Order order = getOrderWithMockedProduct();
-        ShipmentMethod surface = mock(SurfaceMailBus.class);
-
-        // when
-        order.setShipmentMethod(surface);
-
-        // then
-        assertSame(surface, order.getShipmentMethod());
-    }
-
-    @Test
-    public void testSending() {
-        // given
-        Order order = getOrderWithMockedProduct();
-        SurfaceMailBus surface = mock(SurfaceMailBus.class);
-        Shipment shipment = mock(Shipment.class);
-        given(shipment.isShipped()).willReturn(true);
-
-        // when
-        order.setShipmentMethod(surface);
-        order.setShipment(shipment);
-        order.send();
-
-        // then
-        assertTrue(order.isSent());
-    }
-
-    @Test
-    public void testIsSentWithoutSending() {
-        // given
-        Order order = getOrderWithMockedProduct();
-        Shipment shipment = mock(Shipment.class);
-        given(shipment.isShipped()).willReturn(true);
-
-        // when
-
-        // then
-        assertFalse(order.isSent());
-    }
-
-    @Test
-    public void testWhetherIdExists() throws Exception {
-        // given
-        Order order = getOrderWithMockedProduct();
-
-        // when
-
-        // then
-        assertNotNull(order.getId());
-    }
-
-    @Test
-    public void testSetPaymentMethod() throws Exception {
-        // given
-        Order order = getOrderWithMockedProduct();
-        PaymentMethod paymentMethod = mock(MoneyTransferPaymentTransaction.class);
-
-        // when
-        order.setPaymentMethod(paymentMethod);
-
-        // then
-        assertSame(paymentMethod, order.getPaymentMethod());
-    }
-
-    @Test
-    public void testPaying() throws Exception {
-        // given
-        Order order = getOrderWithMockedProduct();
-        PaymentMethod paymentMethod = mock(MoneyTransferPaymentTransaction.class);
-        given(paymentMethod.commit(any(MoneyTransfer.class))).willReturn(true);
-        MoneyTransfer moneyTransfer = mock(MoneyTransfer.class);
-        given(moneyTransfer.isCommitted()).willReturn(true);
-
-        // when
-        order.setPaymentMethod(paymentMethod);
-        order.pay(moneyTransfer);
-
-        // then
-        assertTrue(order.isPaid());
-    }
-
-    @Test
-    public void testIsPaidWithoutPaying() throws Exception {
-        // given
-        Order order = getOrderWithMockedProduct();
-
-        // when
-
-        // then
-        assertFalse(order.isPaid());
-    }
-}
-
-```
-
-```java
-public Order(@NonNull List<Product> products) {
-        if(products.isEmpty())
-            throw new IllegalArgumentException("Product list can't be empty");
-        this.products = products;
-        id = UUID.randomUUID();
-        paid = false;
-    }
 }
 ```
 
+<div style="page-break-after: always;"></div>
+
+Dopisano dwa testy sprawdzające czy lista produktów nie jest pusta.
+
 ```java
- @Test
+    @Test
     public void testNullProductListOrder(){
         // when then
         assertThrows(NullPointerException.class, ()->{
@@ -468,36 +204,86 @@ public Order(@NonNull List<Product> products) {
 
 ```
 
+<div style="page-break-after: always;"></div>
 
-## kolejny punkt
+Zaimplementowano metodę `getPrice()` w klasie `Order` i zmodyfikowano konstruktor, tak aby nie pozwalał na pustą listę produktów.
 
 ```java
-public void setOrderDiscount(BigDecimal discount){
+public class Order {
+    private static final BigDecimal TAX_VALUE = BigDecimal.valueOf(1.23);
+    private final UUID id;
+    private final List<Product> products;
+    private boolean paid;
+    private Shipment shipment;
+    private ShipmentMethod shipmentMethod;
+    private PaymentMethod paymentMethod;
 
+    public Order(@NonNull List<Product> products) {
+        if(products.isEmpty())
+            throw new IllegalArgumentException("Product list can't be empty");
+        this.products = products;
+        id = UUID.randomUUID();
+        paid = false;
+    }
+}
+
+    public BigDecimal getPrice() {
+        return products
+                .stream()
+                .map(Product::getPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+    }
+    ...
+}
+```
+
+Wszystkie testy przebiegły pomyślnie.
+
+![](res/2020-05-27-10-04-21.png)
+
+<div style="page-break-after: always;"></div>
+
+## 3. Dodać możliwość naliczania rabatu do pojedynczego produktu i do całego zamówienia.
+
+Do klasy `Order` dodano atrybut discount oraz gettera i settera.
+
+```java
+private BigDecimal discount = BigDecimal.valueOf(1);
+
+public void setOrderDiscount(BigDecimal discount){
+    this.discount = discount;
 }
 
 public BigDecimal getOrderDiscount(){
-    return null;
+    return discount;
 }
 ```
+
+W klasie `Product` wprowadzono analogiczne zmiany. Dodano również konstruktor, przyjmujący dodatkowo rabat.
 
 ```java
 public Product(String name, BigDecimal price, BigDecimal discount) {
-    this(name, price);
-}
+        this.name = name;
+        this.price = price;
+        this.price.setScale(PRICE_PRECISION, ROUND_STRATEGY);
+        this.discount = discount;
+    }
 
 public void setProductDiscount(BigDecimal discount) {
-
+    this.discount = discount;
 }
 
 public BigDecimal getProductDiscount() {
-    return null;
+    return discount;
 }
 ```
 
+<div style="page-break-after: always;"></div>
+
+Dopisano kilka testów dla klasy `Product`, które sprawdzają poprawność liczenia ceny z rabatem i bez niego.
+
 ```java
-
-
     private static final BigDecimal DISCOUNT = BigDecimal.valueOf(0.76);
  
     @Test
@@ -534,69 +320,12 @@ public BigDecimal getProductDiscount() {
     }
 ```
 
+<div style="page-break-after: always;"></div>
 
-```java
-
-    @Test
-    public void testGetOrderPriceWithOnlyOrderDiscount() throws Exception {
-        // given
-        List<Double> prices = new ArrayList<>(Arrays.asList(0.2, 0.5, 2.5));
-        Order order = getOrderWithCertainProductPrices(prices);
-        BigDecimal discount = BigDecimal.valueOf(0.76);
-        order.setOrderDiscount(discount);
-
-        // when
-        BigDecimal actualProductPrice = order.getPrice();
-        BigDecimal expectedProductPrice = prices.stream()
-                .map(BigDecimal::valueOf)
-                .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .multiply(discount);
-
-        // then
-        assertBigDecimalCompareValue(expectedProductPrice, actualProductPrice);
-    }
-
-    @Test
-    public void testGetOrderPriceWithOnlyProductDiscount() throws Exception {
-        // given
-        List<Double> prices = new ArrayList<>(Arrays.asList(0.2, 0.5, 2.5));
-        Order order = getOrderWithCertainProductPrices(prices);
-        BigDecimal discount = BigDecimal.valueOf(0.76);
-        order.getProducts().forEach(product -> product.setProductDiscount(discount));
-
-        // when
-        BigDecimal actualProductPrice = order.getPrice();
-        BigDecimal expectedProductPrice = prices.stream()
-                .map(BigDecimal::valueOf)
-                .map(val -> val.multiply(discount))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        // then
-        assertBigDecimalCompareValue(expectedProductPrice, actualProductPrice);
-    }
-
-    @Test
-    public void testGetOrderPriceWithProductAndOrderDiscount() throws Exception {
-        // given
-        List<Double> prices = new ArrayList<>(Arrays.asList(0.2, 0.5, 2.5));
-        Order order = getOrderWithCertainProductPrices(prices);
-        BigDecimal productDiscount = BigDecimal.valueOf(0.76);
-        BigDecimal orderDiscount = BigDecimal.valueOf(0.9);
-        order.getProducts().forEach(product -> product.setProductDiscount(productDiscount));
-        order.setOrderDiscount(orderDiscount);
-
-        // when
-        BigDecimal actualProductPrice = order.getPrice();
-        BigDecimal expectedProductPrice = prices.stream()
-                .map(BigDecimal::valueOf)
-                .map(val -> val.multiply(productDiscount))
-                .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .multiply(orderDiscount);
-
-        // then
-        assertBigDecimalCompareValue(expectedProductPrice, actualProductPrice);
-    }
-```
+Dopisano również testy dla klasy `Order`:
+* `testGetOrderPriceWithOnlyOrderDiscount()` sprawdzający poprawność ceny tylko z rabatem dla całego zamówienia
+* `testGetOrderPriceWithOnlyProductDiscount()` sprawdzający poprawność ceny tylko z rabatami dla produktów
+* `testGetOrderPriceWithProductAndOrderDiscount()` sprawdzający poprawność ceny z rabatami zarówno dla poszczególnych produktów, jak i całego zamówienia
 
 ```java
  @Test
@@ -658,152 +387,188 @@ public BigDecimal getProductDiscount() {
     }
 ```
 
-## 4
+Zmodyfikowano metody `getPrice()` zarówno w klasie `Product`, jak i w klasie `Order`.
+
+* Klasa `Product`:
+```java
+public BigDecimal getPrice() {
+        return price.multiply(discount);
+    }
+```
+
+* Klasa `Order`:
+```java
+public BigDecimal getPrice() {
+        return products
+                .stream()
+                .map(Product::getPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .multiply(discount);
+
+    }
+```
+
+<div style="page-break-after: always;"></div>
+
+Wszystkie testy przebiegły pomyślnie.
+
+![](res/2020-05-27-10-15-26.png)
+
+![](res/2020-05-27-10-00-56.png)
+
+<div style="page-break-after: always;"></div>
+
+### 4. Umożliwić przechowywanie historii zamówień z wyszukiwaniem po: nazwie produktu, kwocie zamówienia, nazwisku zamawiającego. Wyszukiwać można przy użyciu jednego lub wielu kryteriów.
+
+Stworzono interfejs `SearchStrategy` odpowiedzialny za filtrowanie zamówień.
 
 ```java
-package pl.edu.agh.internetshop.SearchStrategy;
+public interface SearchStrategy {
+    boolean filter(Order order);
+}
+```
 
-import pl.edu.agh.internetshop.Order;
+Następnie stworzono cztery klasy implementujące ten interfejs:
+* `ClientNameSearchStrategy` - wyszukiwanie zamówienia po nazwisku zamawiającego
 
+```java
 public class ClientNameSearchStrategy implements SearchStrategy {
 
-    private String clientName;
+    private final String clientName;
 
     public ClientNameSearchStrategy(String clientName) {
-        
+        this.clientName=clientName;
     }
 
     @Override
     public boolean filter(Order order) {
-        return true;
-    }
-}
-
-```
-
-```java
-package pl.edu.agh.internetshop.SearchStrategy;
-
-import pl.edu.agh.internetshop.Order;
-
-import java.util.ArrayList;
-import java.util.Collection;
-
-public class CompositeSearchStrategy implements SearchStrategy{
-
-    public void addStrategy(SearchStrategy searchStrategy){
-    }
-
-    @Override
-    public boolean filter(Order order) {
-        return false;
+        return order.getShipment()
+                .getRecipientAddress()
+                .getName()
+                .equals(clientName);
     }
 }
 ```
 
+* `PriceSearchStrategy` - wyszukiwanie po kwocie zamówienia
 
 ```java
-package pl.edu.agh.internetshop.SearchStrategy;
-
-import pl.edu.agh.internetshop.Order;
-
-import java.math.BigDecimal;
-
 public class PriceSearchStrategy implements SearchStrategy {
-    
+
+    private final BigDecimal price;
+
     public PriceSearchStrategy(BigDecimal price) {
-        
+        this.price = price;
     }
 
     @Override
     public boolean filter(Order order) {
-        return false;
+        return order.getPrice().equals(price);
     }
 }
-
 ```
 
+* `ProductNameSearchStrategy` - wyszukiwanie po nazwie produktu
+
 ```java
-
-package pl.edu.agh.internetshop.SearchStrategy;
-
-import pl.edu.agh.internetshop.Order;
-
 public class ProductNameSearchStrategy implements SearchStrategy {
+
+    private final String productName;
+
     public ProductNameSearchStrategy(String productName) {
+        this.productName=productName;
     }
 
     @Override
     public boolean filter(Order order) {
-        return false;
+        return order.getProducts()
+                .stream()
+                .map(Product::getName)
+                .anyMatch(prodName-> prodName.equals(this.productName));
     }
 }
-
 ```
 
-```java
+* `CompositeSearchStrategy` - filtrowanie zamówień po wielu kryteriach.
 
+```java
+public class CompositeSearchStrategy implements SearchStrategy {
+    Collection<SearchStrategy> searchStrategies = new ArrayList<>();
+
+    public void addStrategy(SearchStrategy searchStrategy) {
+        searchStrategies.add(searchStrategy);
+    }
+
+    @Override
+    public boolean filter(Order order) {
+        return this.searchStrategies
+                .stream()
+                .allMatch(searchStrategy -> searchStrategy.filter(order));
+    }
+}
+```
+
+Następnie stworzono interfejs `OrderHistoryInterface` odpowiedzialny za przechowywanie informacji o złożonych zamówieniach.
+
+```java
 public interface OrderHistoryInterface {
 
     public void addOrder(Order order);
     public List<Order> findOrderByStrategy(SearchStrategy strategy);
+    public List<Order> getOrders();
 
 }
-
-
-
 ```
+
+Utworzono klasę `OrderHistory` implementującą interfejs `OrderHistoryInterface`, która jest singletonem i umożliwia przechowywanie historii zamówień oraz wyszukiwanie ich po różnych kryteriach.
 
 ```java
 public class OrderHistory implements OrderHistoryInterface {
 
+    private static OrderHistory orderHistory = null;
+    private List<Order> orders;
+
+    public OrderHistory(){
+        this.orders = new ArrayList<>();
+    }
 
     public static OrderHistory getInstance(){
-        return null;
+        if(OrderHistory.orderHistory == null){
+            OrderHistory.orderHistory = new OrderHistory();
+        }
+        return OrderHistory.orderHistory;
     }
 
 
     @Override
     public void addOrder(Order order) {
-
+        orders.add(order);
     }
 
     @Override
     public List<Order> findOrderByStrategy(SearchStrategy strategy) {
-        return null;
+        return this.orders.stream()
+                .filter(strategy::filter)
+                .collect(Collectors.toList());
     }
 
+    @Override
+    public List<Order> getOrders() {
+        return this.orders;
+    }
 }
-
-
-
 ```
 
+<div style="page-break-after: always;"></div>
 
-testy 
+Napisano testy dla klas implementujących interfejs `SearchStrategy`, sprawdzające poprawność filtrowania zamówień.
 
 ```java
-package pl.edu.agh.internetshop;
-
-import org.junit.jupiter.api.Test;
-import pl.edu.agh.internetshop.SearchStrategy.ClientNameSearchStrategy;
-import pl.edu.agh.internetshop.SearchStrategy.CompositeSearchStrategy;
-import pl.edu.agh.internetshop.SearchStrategy.PriceSearchStrategy;
-import pl.edu.agh.internetshop.SearchStrategy.ProductNameSearchStrategy;
-import pl.edu.agh.internetshop.Shipment.Shipment;
-
-import java.math.BigDecimal;
-import java.util.Collections;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mock;
-
 public class SearchStrategyTest {
 
     @Test
     public void clientNameSearchStrategyTest() throws Exception{
-
+        // given
         String wantedName = "Name Wanted";
 
         ClientNameSearchStrategy searchStrategy = new ClientNameSearchStrategy(wantedName);
@@ -823,7 +588,7 @@ public class SearchStrategyTest {
         given(badOrder.getShipment()).willReturn(shipment2);
 
 
-
+        // when then
         assertTrue(searchStrategy.filter(goodOrder));
         assertFalse(searchStrategy.filter(badOrder));
 
@@ -831,7 +596,7 @@ public class SearchStrategyTest {
 
     @Test
     public void productNameSearchStrategyTest() throws Exception{
-
+        // given
         String wantedName = "Name Wanted";
 
         ProductNameSearchStrategy searchStrategy = new ProductNameSearchStrategy(wantedName);
@@ -844,8 +609,7 @@ public class SearchStrategyTest {
         given(product2.getName()).willReturn("wrong name");
         Order badOrder = new Order(Collections.singletonList(product2));
 
-
-
+        // when then
         assertTrue(searchStrategy.filter(goodOrder));
         assertFalse(searchStrategy.filter(badOrder));
 
@@ -854,7 +618,7 @@ public class SearchStrategyTest {
 
     @Test
     public void priceSearchStrategyTest() throws Exception{
-
+        // given
         BigDecimal wantedPrice = BigDecimal.valueOf(2.1);
 
         PriceSearchStrategy searchStrategy = new PriceSearchStrategy(wantedPrice);
@@ -867,23 +631,20 @@ public class SearchStrategyTest {
         given(product2.getPrice()).willReturn(BigDecimal.valueOf(3.7));
         Order badOrder = new Order(Collections.singletonList(product2));
 
+        // when then
         assertFalse(searchStrategy.filter(badOrder));
         assertTrue(searchStrategy.filter(goodOrder));
-
     }
 
     @Test
     public void CompositeSearchTest() {
-
+        // given
         String wantedName = "Name Wanted";
         BigDecimal wantedPrice = BigDecimal.valueOf(2.1);
 
         PriceSearchStrategy priceSearchStrategy = new PriceSearchStrategy(wantedPrice);
         ProductNameSearchStrategy nameSearchStrategy = new ProductNameSearchStrategy(wantedName);
         CompositeSearchStrategy searchStrategy = new CompositeSearchStrategy();
-        searchStrategy.addStrategy(priceSearchStrategy);
-        searchStrategy.addStrategy(nameSearchStrategy);
-
 
         Product product1 = mock(Product.class);
         given(product1.getName()).willReturn(wantedName);
@@ -900,70 +661,44 @@ public class SearchStrategyTest {
         given(product3.getPrice()).willReturn(BigDecimal.valueOf(3.7));
         Order badOrder2 = new Order(Collections.singletonList(product3));
 
+        // when
+        searchStrategy.addStrategy(priceSearchStrategy);
+        searchStrategy.addStrategy(nameSearchStrategy);
 
-
+        // then
         assertTrue(searchStrategy.filter(goodOrder));
         assertFalse(searchStrategy.filter(badOrder1));
         assertFalse(searchStrategy.filter(badOrder2));
-
-
     }
-
 }
 ```
 
+Test dla klasy `OrderHistory`, sprawdzający poprawność przechowywanych zamówień.
+
 ```java
-package pl.edu.agh.internetshop.OrderHistory;
-
-import org.junit.jupiter.api.Test;
-import pl.edu.agh.internetshop.Order;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-
 class OrderHistoryTest {
 
     @Test
     void addAndGetOrderTest() {
+        // given
         Order expectedOrder = mock(Order.class);
         OrderHistory orderHistory = new OrderHistory();
         orderHistory.addOrder(expectedOrder);
-
+        
+        // when
         Order actualOrder = orderHistory.getOrders().get(0);
 
-        assertSame(expectedOrder, actualOrder);
-
+        // then
+        assertEquals(expectedOrder, actualOrder);
     }
 }
 ```
 
+<div style="page-break-after: always;"></div>
+
+Testy dla klasy `OrderHistory`, sprawdzające poprawność filtrowania zamówień.
 
 ```java
-package pl.edu.agh.internetshop.OrderHistory;
-
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import pl.edu.agh.internetshop.Address;
-import pl.edu.agh.internetshop.Order;
-import pl.edu.agh.internetshop.OrderHistory.OrderHistory;
-import pl.edu.agh.internetshop.OrderHistory.OrderHistoryInterface;
-import pl.edu.agh.internetshop.Product;
-import pl.edu.agh.internetshop.SearchStrategy.ClientNameSearchStrategy;
-import pl.edu.agh.internetshop.SearchStrategy.CompositeSearchStrategy;
-import pl.edu.agh.internetshop.SearchStrategy.PriceSearchStrategy;
-import pl.edu.agh.internetshop.SearchStrategy.ProductNameSearchStrategy;
-import pl.edu.agh.internetshop.Shipment.Shipment;
-
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mock;
-
 public class OrderHistoryFilterTest {
 
     private static final String customerName1 = "Adam Smith";
@@ -1024,8 +759,6 @@ public class OrderHistoryFilterTest {
         // then
         assertEquals(actualOrders.size(), expectedOrders.size());
         assertEquals(actualOrders.get(0), expectedOrders.get(0));
-
-
     }
 
     @Test
@@ -1048,7 +781,6 @@ public class OrderHistoryFilterTest {
         // then
         assertEquals(actualOrders.size(), expectedOrders.size());
         assertEquals(actualOrders.get(0), expectedOrders.get(0));
-
     }
 
     @Test
@@ -1074,8 +806,6 @@ public class OrderHistoryFilterTest {
         // then
         assertEquals(actualOrders.size(), expectedOrders.size());
         assertEquals(actualOrders.get(0), expectedOrders.get(0));
-
-
     }
 
     @Test
@@ -1106,21 +836,16 @@ public class OrderHistoryFilterTest {
         // then
         assertEquals(actualOrders.size(), expectedOrders.size());
         assertEquals(actualOrders.get(0), expectedOrders.get(0));
-
-
     }
-
-
-
-
-
 }
 ```
 
+<div style="page-break-after: always;"></div>
 
+Wszystkie test przebiegły pomyślnie.
 
+![](res/2020-05-27-11-09-47.png)
 
+![](res/2020-05-27-11-09-13.png)
 
-
-
-
+![](res/2020-05-27-11-08-29.png)

@@ -18,7 +18,7 @@ public class SearchStrategyTest {
 
     @Test
     public void clientNameSearchStrategyTest() throws Exception{
-
+        // given
         String wantedName = "Name Wanted";
 
         ClientNameSearchStrategy searchStrategy = new ClientNameSearchStrategy(wantedName);
@@ -38,7 +38,7 @@ public class SearchStrategyTest {
         given(badOrder.getShipment()).willReturn(shipment2);
 
 
-
+        // when then
         assertTrue(searchStrategy.filter(goodOrder));
         assertFalse(searchStrategy.filter(badOrder));
 
@@ -46,7 +46,7 @@ public class SearchStrategyTest {
 
     @Test
     public void productNameSearchStrategyTest() throws Exception{
-
+        // given
         String wantedName = "Name Wanted";
 
         ProductNameSearchStrategy searchStrategy = new ProductNameSearchStrategy(wantedName);
@@ -59,8 +59,7 @@ public class SearchStrategyTest {
         given(product2.getName()).willReturn("wrong name");
         Order badOrder = new Order(Collections.singletonList(product2));
 
-
-
+        // when then
         assertTrue(searchStrategy.filter(goodOrder));
         assertFalse(searchStrategy.filter(badOrder));
 
@@ -69,7 +68,7 @@ public class SearchStrategyTest {
 
     @Test
     public void priceSearchStrategyTest() throws Exception{
-
+        // given
         BigDecimal wantedPrice = BigDecimal.valueOf(2.1);
 
         PriceSearchStrategy searchStrategy = new PriceSearchStrategy(wantedPrice);
@@ -82,23 +81,20 @@ public class SearchStrategyTest {
         given(product2.getPrice()).willReturn(BigDecimal.valueOf(3.7));
         Order badOrder = new Order(Collections.singletonList(product2));
 
+        // when then
         assertFalse(searchStrategy.filter(badOrder));
         assertTrue(searchStrategy.filter(goodOrder));
-
     }
 
     @Test
     public void CompositeSearchTest() {
-
+        // given
         String wantedName = "Name Wanted";
         BigDecimal wantedPrice = BigDecimal.valueOf(2.1);
 
         PriceSearchStrategy priceSearchStrategy = new PriceSearchStrategy(wantedPrice);
         ProductNameSearchStrategy nameSearchStrategy = new ProductNameSearchStrategy(wantedName);
         CompositeSearchStrategy searchStrategy = new CompositeSearchStrategy();
-        searchStrategy.addStrategy(priceSearchStrategy);
-        searchStrategy.addStrategy(nameSearchStrategy);
-
 
         Product product1 = mock(Product.class);
         given(product1.getName()).willReturn(wantedName);
@@ -115,13 +111,13 @@ public class SearchStrategyTest {
         given(product3.getPrice()).willReturn(BigDecimal.valueOf(3.7));
         Order badOrder2 = new Order(Collections.singletonList(product3));
 
+        // when
+        searchStrategy.addStrategy(priceSearchStrategy);
+        searchStrategy.addStrategy(nameSearchStrategy);
 
-
+        // then
         assertTrue(searchStrategy.filter(goodOrder));
         assertFalse(searchStrategy.filter(badOrder1));
         assertFalse(searchStrategy.filter(badOrder2));
-
-
     }
-
 }

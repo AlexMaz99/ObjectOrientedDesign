@@ -40,6 +40,22 @@ public class OrderTest {
     }
 
     @Test
+    public void testProductsThroughOrder() {
+        // given
+        Product expectedProduct1 = mock(Product.class);
+        Product expectedProduct2 = mock(Product.class);
+        Order order = new Order(Arrays.asList(expectedProduct1, expectedProduct2));
+
+        // when
+        List<Product> actualProducts = order.getProducts();
+
+        // then
+        assertEquals(actualProducts.size(), 2);
+        assertSame(expectedProduct1, actualProducts.get(0));
+        assertSame(expectedProduct2, actualProducts.get(1));
+    }
+
+    @Test
     public void testSetShipment() throws Exception {
         // given
         Order order = getOrderWithMockedProduct();

@@ -9,11 +9,11 @@ import java.util.stream.Collectors;
 
 public class OrderHistory implements OrderHistoryInterface {
 
-    private static OrderHistory orderHistory=null;
+    private static OrderHistory orderHistory = null;
     private List<Order> orders;
 
     public OrderHistory(){
-        this.orders=new ArrayList<>();
+        this.orders = new ArrayList<>();
     }
 
     public static OrderHistory getInstance(){

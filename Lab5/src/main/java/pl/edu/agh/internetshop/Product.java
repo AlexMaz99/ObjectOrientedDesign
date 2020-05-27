@@ -19,11 +19,11 @@ public class Product {
         this.name = name;
         this.price = price;
         this.price.setScale(PRICE_PRECISION, ROUND_STRATEGY);
-        this.discount=discount;
+        this.discount = discount;
     }
 
     public void setProductDiscount(BigDecimal discount) {
-        this.discount=discount;
+        this.discount = discount;
     }
 
     public BigDecimal getProductDiscount() {

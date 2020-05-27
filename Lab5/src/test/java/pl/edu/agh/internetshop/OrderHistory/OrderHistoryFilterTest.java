@@ -83,8 +83,6 @@ public class OrderHistoryFilterTest {
         // then
         assertEquals(actualOrders.size(), expectedOrders.size());
         assertEquals(actualOrders.get(0), expectedOrders.get(0));
-
-
     }
 
     @Test
@@ -107,7 +105,6 @@ public class OrderHistoryFilterTest {
         // then
         assertEquals(actualOrders.size(), expectedOrders.size());
         assertEquals(actualOrders.get(0), expectedOrders.get(0));
-
     }
 
     @Test
@@ -133,8 +130,6 @@ public class OrderHistoryFilterTest {
         // then
         assertEquals(actualOrders.size(), expectedOrders.size());
         assertEquals(actualOrders.get(0), expectedOrders.get(0));
-
-
     }
 
     @Test
@@ -165,12 +160,5 @@ public class OrderHistoryFilterTest {
         // then
         assertEquals(actualOrders.size(), expectedOrders.size());
         assertEquals(actualOrders.get(0), expectedOrders.get(0));
-
-
     }
-
-
-
-
-
 }

@@ -10,13 +10,15 @@ class OrderHistoryTest {
 
     @Test
     void addAndGetOrderTest() {
+        // given
         Order expectedOrder = mock(Order.class);
         OrderHistory orderHistory = new OrderHistory();
         orderHistory.addOrder(expectedOrder);
 
+        // when
         Order actualOrder = orderHistory.getOrders().get(0);
 
+        // then
         assertEquals(expectedOrder, actualOrder);
-
     }
 }
