@@ -14,7 +14,7 @@ import java.util.Arrays;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-// zakłąda ze w tekscie nie ma liczb XXXXXXXXDDDDDDDDDD
+// zakłada ze w tekscie nie ma liczb
 public class CompressionDecorator extends DataSourceDecorator {
     public CompressionDecorator(DataSource wrappee) {
         super(wrappee);

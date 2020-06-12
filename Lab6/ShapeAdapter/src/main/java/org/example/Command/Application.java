@@ -1,12 +1,14 @@
 package org.example.Command;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
-import org.example.Command.Commands.Command;
+import org.example.Command.Commands.*;
 
 import java.util.List;
 @Getter
 @Setter
+@AllArgsConstructor
 public class Application {
 
     private String clipboard;
@@ -18,7 +20,13 @@ public class Application {
 
     public void createUI() {
 
+        executeCommand(new CopyCommand(this, activeEditor));
 
+        executeCommand(new CutCommand(this, activeEditor));
+
+        executeCommand(new PasteCommand(this, activeEditor));
+
+        executeCommand(new UndoCommand(this, activeEditor));
 
     }
 
